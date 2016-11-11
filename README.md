@@ -1,6 +1,7 @@
 # Etimer
 
-**TODO: Add description**
+Timer module for Elixir that makes it easy to abstact time out of the tests.
+Basically a rewrite of from https://github.com/lehoff/chronos in Elixir.
 
 ## Installation
 
@@ -11,14 +12,6 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     ```elixir
     def deps do
       [{:etimer, "~> 0.1.0"}]
-    end
-    ```
-
-  2. Ensure `etimer` is started before your application:
-
-    ```elixir
-    def application do
-      [applications: [:etimer]]
     end
     ```
 

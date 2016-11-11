@@ -2,7 +2,7 @@
 
 Timer module for Elixir that makes it easy to abstact time out of the tests.
 
-Basically a rewrite of from https://github.com/lehoff/chronos in Elixir.
+Basically a rewrite of :chronos, from https://github.com/lehoff/chronos
 
 ## Installation
 

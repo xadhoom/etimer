@@ -10,14 +10,18 @@ defmodule Etimer do
     GenServer.start_link(__MODULE__, server_name)
   end
 
+  @spec stop(term) :: :ok
   def stop(server_name) do
     call(server_name, :stop)
   end
 
+  @type cb :: {module, atom, term}
+  @spec start_timer(term, term, non_neg_integer, cb) :: :ok
   def start_timer(server_name, tname, timeout, cb) when is_integer(timeout) and timeout >= 0 do
     call(server_name, {:start_timer, tname, timeout, cb})
   end
 
+  @spec stop_timer(term, term) :: :not_running | {:ok, non_neg_integer}
   def stop_timer(server_name, tname) do
     call(server_name, {:stop_timer, tname})
   end
@@ -34,6 +38,8 @@ defmodule Etimer do
   end
 
   @doc false
+  @callback handle_call({:start_timer, term, non_neg_integer, cb}, pid, %Etimer{running: list(tuple)}) ::
+    {:reply, :ok, %Etimer{running: list(tuple)}}
   def handle_call({:start_timer, tname, timeout, cb={_m, _f, _a}}, _from, state) do
     # If the tname timer is running we clean it up.
     # Otherwise just start it.
@@ -55,6 +61,9 @@ defmodule Etimer do
   end
 
   @doc false
+  @callback handle_call({:stop_timer, term}, pid, %Etimer{running: list(tuple)}) ::
+    {:reply, :not_running, %Etimer{running: list(tuple)}} |
+    {:reply, {:ok, non_neg_integer}, %Etimer{running: list(tuple)}}
   def handle_call({:stop_timer, tname}, _from, state) do
     case List.keytake(state.running, tname, 0) do
       nil ->
@@ -76,6 +85,8 @@ defmodule Etimer do
   end
 
   @doc false
+  @callback handle_info({:timeout, reference, {term, cb}}, %Etimer{running: list(tuple)}) ::
+    {:noreply, %Etimer{running: list(tuple)}}
   def handle_info({:timeout, tref, {tname, {mod, fun, args}}}, state) do
 
     timers = case List.keytake(state.running, tname, 0) do

@@ -22,6 +22,7 @@ defmodule Etimer.Mixfile do
   defp deps do
     [
       {:gproc, "~> 0.6.1"},
+      {:dialyxir, "~> 0.4", only: [:dev]},
       {:credo, "~> 0.4", only: [:dev, :test]},
       {:meck, "~> 0.8", only: [:test]},
       {:excoveralls, "~> 0.5", only: [:test]}

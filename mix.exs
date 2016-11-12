@@ -10,7 +10,11 @@ defmodule Etimer.Mixfile do
      deps: deps(),
      test_coverage: [tool: ExCoveralls],
      preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, 
-      "coveralls.post": :test, "coveralls.travis": :test]
+      "coveralls.post": :test, "coveralls.travis": :test],
+     # Docs
+     name: "Etimer",
+     source_url: "https://github.com/xadhoom/etimer",
+     docs: [main: "Etimer", extras: ["README.md"]] 
     ]
   end
 
@@ -23,6 +27,7 @@ defmodule Etimer.Mixfile do
     [
       {:gproc, "~> 0.6.1"},
       {:dialyxir, "~> 0.4", only: [:dev]},
+      {:ex_doc, "~> 0.14.3"},
       {:credo, "~> 0.4", only: [:dev, :test]},
       {:meck, "~> 0.8", only: [:test]},
       {:excoveralls, "~> 0.5", only: [:test]}

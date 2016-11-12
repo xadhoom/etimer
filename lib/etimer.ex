@@ -1,4 +1,15 @@
 defmodule Etimer do
+  @moduledoc """
+  A timer module to book keep several timers and makes it easy to abstract
+  them out of tests.
+
+  Derived (basically a porting from erlang to elixir) from
+  [:chronos](https://github.com/lehoff/chronos).
+
+  Many concepts are cleary expressed into the original package,
+  which can be referenced for more details.
+
+  """
   use GenServer
 
   alias Etimer.Timer
@@ -6,21 +17,67 @@ defmodule Etimer do
   defstruct running: []
 
   # API
+  @doc """
+  Starts a new timer server and links to the current process.
+
+  Server name can be any `term()` which gets registered through `:gproc`.
+
+  If the current process dies, all registered timers will be cancelled.
+
+  ## Example:
+
+      Etimer.start_link(:my_server)
+  """
   def start_link(server_name) do
     GenServer.start_link(__MODULE__, server_name)
   end
 
+  @doc """
+  Stops the given timer server. All outstanding timers will be cancelled.
+
+  ## Example:
+
+      Etimer.stop(:my_server)
+  """
   @spec stop(term) :: :ok
   def stop(server_name) do
     call(server_name, :stop)
   end
 
+  @doc """
+  Starts a new timer with name `tname` on timer server `server_name`,
+  with timeout `timeout`, expressed in milliseconds. After the given timeout,
+  the given `cb` will be called.
+
+  `cb` is a 3-items tuple `{module, atom, [term[]]}`,
+  where `atom` is the function that will get called on module `module`,
+  passings arguments expressed in `[term[]]`.
+
+  The `cb` will get called on a separate process via `spawn`
+  in order to not block the timer server.
+
+  ## Example:
+
+      Etimer.start_timer(:my_server, :timer1, 1_000, {IO, :inspect, ["hello"]})
+  """
   @type cb :: {module, atom, term}
   @spec start_timer(term, term, non_neg_integer, cb) :: :ok
   def start_timer(server_name, tname, timeout, cb) when is_integer(timeout) and timeout >= 0 do
     call(server_name, {:start_timer, tname, timeout, cb})
   end
 
+  @doc """
+  Stops the timer with name `tname` on server `server_name`.
+
+  ## Example:
+
+      Etimer.stop_timer(:my_server, :timer1)
+
+  It returns the atom `:not_running` is the timer is not running, otherwise
+  the 2-element tuple `{:ok, remaing_time}`, where `remaing_time`
+  is the time left before the expiry of the timer.
+  The callback will not be called.
+  """
   @spec stop_timer(term, term) :: :not_running | {:ok, non_neg_integer}
   def stop_timer(server_name, tname) do
     call(server_name, {:stop_timer, tname})
@@ -38,7 +95,7 @@ defmodule Etimer do
   end
 
   @doc false
-  @callback handle_call({:start_timer, term, non_neg_integer, cb},
+  @spec handle_call({:start_timer, term, non_neg_integer, cb},
     pid, %Etimer{running: list(tuple)}) ::
     {:reply, :ok, %Etimer{running: list(tuple)}}
   def handle_call({:start_timer, tname, timeout, cb = {_m, _f, _a}}, _from, state) do
@@ -62,7 +119,7 @@ defmodule Etimer do
   end
 
   @doc false
-  @callback handle_call({:stop_timer, term},
+  @spec handle_call({:stop_timer, term},
     pid, %Etimer{running: list(tuple)}) ::
     {:reply, :not_running, %Etimer{running: list(tuple)}} |
     {:reply, {:ok, non_neg_integer}, %Etimer{running: list(tuple)}}
@@ -87,7 +144,7 @@ defmodule Etimer do
   end
 
   @doc false
-  @callback handle_info({:timeout, reference, {term, cb}},
+  @spec handle_info({:timeout, reference, {term, cb}},
     %Etimer{running: list(tuple)}) ::
     {:noreply, %Etimer{running: list(tuple)}}
   def handle_info({:timeout, tref, {tname, {mod, fun, args}}}, state) do

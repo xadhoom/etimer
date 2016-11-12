@@ -3,7 +3,7 @@
 
 Timer module for Elixir that makes it easy to abstract time out of the tests.
 
-Basically a rewrite of :chronos, from https://github.com/lehoff/chronos
+Basically a rewrite of [:chronos](https://github.com/lehoff/chronos)
 
 ## Installation
 

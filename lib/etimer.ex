@@ -9,6 +9,41 @@ defmodule Etimer do
   Many concepts are cleary expressed into the original package,
   which can be referenced for more details.
 
+## Testing with Etimer (adapted from :chronos)
+
+Provide a `timer_expiry` function as part of the API for the component
+you are creating, for example:
+
+      def timer_expiry(timer_name) do
+        GenServer.call(__MODULE__, {:timer_expiry, timer_name})
+      end
+
+In the code you can request a timer like this:
+
+      Etimer:start_timer(:my_server, :timer1, {MyMod, timer_expiry, [:timer1]})
+
+and then handling the timeout becomes very simple:
+
+      def handle_call({timer_expiry, :timer1}, _from, state) do
+        # your timed code here
+        {:reply, :something, state}
+      end
+
+That is the basic set-up and while testing you have to mock
+Etimer. For example, using `:meck`:
+
+      :meck.new(Etimer)
+      :meck.expect(Etimer, :start_timer, fn(_, _, _) -> 42 end)
+
+As part of the test you check that the timer was requsted to start:
+
+      assert :meck.called(Etimer, :start_timer, [:my_server, :timer1])
+
+And when you come to the point in the test where you want to see the
+effects of the timer expiry you simply have to call:
+
+      MyMod.timer_expiry(:timer1)
+
   """
   use GenServer
 
@@ -16,7 +51,6 @@ defmodule Etimer do
 
   defstruct running: []
 
-  # API
   @doc """
   Starts a new timer server and links to the current process.
 
@@ -24,7 +58,6 @@ defmodule Etimer do
 
   If the current process dies, all registered timers will be cancelled.
 
-  ## Example:
 
       Etimer.start_link(:my_server)
   """
@@ -83,7 +116,9 @@ defmodule Etimer do
     call(server_name, {:stop_timer, tname})
   end
 
-  # GenServer callback
+  #
+  # GenServer callbacks
+  #
   @doc false
   def init(server_name) do
     :gproc

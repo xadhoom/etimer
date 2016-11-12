@@ -13,6 +13,22 @@ defmodule EtimerTest do
     refute pid1 == pid2
   end
 
+  test "start stop server" do
+    assert {:ok, pid} = Etimer.start_link(:my_timer)
+    assert Process.alive?(pid)
+    :ok = Etimer.stop(:my_timer)
+    refute Process.alive?(pid)
+  end
+
+  test "start stop timer" do
+    cb = {IO, :inspect, ["hello"]}
+
+    assert {:ok, _pid} = Etimer.start_link(:my_timer)
+    assert :ok = Etimer.start_timer(:my_timer, :test_timer, 10_000, cb)
+    {:ok, val} = Etimer.stop_timer(:my_timer, :test_timer)
+    assert val > 0
+  end
+
   # 
   # GenServer callbacks tests
   #

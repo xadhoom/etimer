@@ -38,9 +38,10 @@ defmodule Etimer do
   end
 
   @doc false
-  @callback handle_call({:start_timer, term, non_neg_integer, cb}, pid, %Etimer{running: list(tuple)}) ::
+  @callback handle_call({:start_timer, term, non_neg_integer, cb},
+    pid, %Etimer{running: list(tuple)}) ::
     {:reply, :ok, %Etimer{running: list(tuple)}}
-  def handle_call({:start_timer, tname, timeout, cb={_m, _f, _a}}, _from, state) do
+  def handle_call({:start_timer, tname, timeout, cb = {_m, _f, _a}}, _from, state) do
     # If the tname timer is running we clean it up.
     # Otherwise just start it.
 
@@ -61,7 +62,8 @@ defmodule Etimer do
   end
 
   @doc false
-  @callback handle_call({:stop_timer, term}, pid, %Etimer{running: list(tuple)}) ::
+  @callback handle_call({:stop_timer, term},
+    pid, %Etimer{running: list(tuple)}) ::
     {:reply, :not_running, %Etimer{running: list(tuple)}} |
     {:reply, {:ok, non_neg_integer}, %Etimer{running: list(tuple)}}
   def handle_call({:stop_timer, tname}, _from, state) do
@@ -85,7 +87,8 @@ defmodule Etimer do
   end
 
   @doc false
-  @callback handle_info({:timeout, reference, {term, cb}}, %Etimer{running: list(tuple)}) ::
+  @callback handle_info({:timeout, reference, {term, cb}},
+    %Etimer{running: list(tuple)}) ::
     {:noreply, %Etimer{running: list(tuple)}}
   def handle_info({:timeout, tref, {tname, {mod, fun, args}}}, state) do
 

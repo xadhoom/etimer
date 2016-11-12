@@ -17,3 +17,12 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     end
     ```
 
+  2. Ensure `etimer` is started before your application:
+
+    ```elixir
+    def application do
+      [applications: [:etimer]]
+    end
+    ```
+
+

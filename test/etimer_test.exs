@@ -105,6 +105,16 @@ defmodule EtimerTest do
     assert state == new_state
   end
 
+  test "not current timer ref is ignored and removed" do
+    cb = {Process, :send, [self, "hello", []]}
+
+    state = %Etimer{running: [{:my_timer, :oldref}]}
+
+    {:noreply, state} = {:timeout, :newref, {:my_timer, cb}}
+    |> Etimer.handle_info(state)
+    assert Enum.count(state.running) == 0
+  end
+
   test "stop call" do
     {:stop, :normal, :ok, _state} = Etimer.handle_call(:stop, self, %Etimer{})
   end

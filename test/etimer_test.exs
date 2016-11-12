@@ -98,4 +98,17 @@ defmodule EtimerTest do
     assert state == %Etimer{}
   end
 
+  test "on terminate all timers are stopped" do
+    t1 = Timer.start_timer(10_000, self, :msg)
+    t2 = Timer.start_timer(10_000, self, :msg)
+    t3 = Timer.start_timer(10_000, self, :msg)
+
+    state = %Etimer{running: [t1, t2, t3]}
+    :ok = Etimer.terminate(:any, state)
+
+    assert false == :erlang.read_timer(t1)
+    assert false == :erlang.read_timer(t2)
+    assert false == :erlang.read_timer(t3)
+  end
+
 end

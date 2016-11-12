@@ -21,7 +21,7 @@ defmodule EtimerTest do
   end
 
   test "stop not existent timer" do
-    assert {:ok, pid} = Etimer.start_link(:my_timer)
+    assert {:ok, _pid} = Etimer.start_link(:my_timer)
     assert :not_running = Etimer.stop_timer(:my_timer, :test_timer)
   end
 

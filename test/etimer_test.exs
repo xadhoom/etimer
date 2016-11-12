@@ -20,6 +20,11 @@ defmodule EtimerTest do
     refute Process.alive?(pid)
   end
 
+  test "stop not existent timer" do
+    assert {:ok, pid} = Etimer.start_link(:my_timer)
+    assert :not_running = Etimer.stop_timer(:my_timer, :test_timer)
+  end
+
   test "start stop timer" do
     cb = {IO, :inspect, ["hello"]}
 

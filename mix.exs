@@ -16,7 +16,7 @@ defmodule Etimer.Mixfile do
 
   # Configuration for the OTP application
   def application do
-    [applications: [:logger, :gproc]]
+    [applications: [:gproc]]
   end
 
   defp deps do

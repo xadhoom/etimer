@@ -3,6 +3,7 @@ defmodule EtimerTest do
   doctest Etimer
 
   alias Etimer.Timer
+  alias Etimer.Test.TimerHelper
 
   #
   # API tests
@@ -17,7 +18,11 @@ defmodule EtimerTest do
     assert {:ok, pid} = Etimer.start_link(:my_timer)
     assert Process.alive?(pid)
     :ok = Etimer.stop(:my_timer)
-    refute Process.alive?(pid)
+
+    # this may need sometime on slow system, but well
+    TimerHelper.wait_until(fn() ->
+      refute Process.alive?(pid)
+    end)
   end
 
   test "stop not existent timer" do

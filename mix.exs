@@ -27,9 +27,9 @@ defmodule Etimer.Mixfile do
     [
       {:gproc, "~> 0.6.1"},
       {:dialyxir, "~> 0.4", only: [:dev]},
-      {:ex_doc, "~> 0.14.3"},
-      {:credo, "~> 0.4", only: [:dev, :test]},
-      {:excoveralls, "~> 0.5", only: [:test]}
+      {:ex_doc, "~> 0.14"},
+      {:credo, "~> 0.6", only: [:dev, :test]},
+      {:excoveralls, "~> 0.6", only: [:test]}
     ]
   end
 end

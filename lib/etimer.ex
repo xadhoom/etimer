@@ -145,7 +145,7 @@ effects of the timer expiry you simply have to call:
         newts
     end
 
-    trefnew = Timer.start_timer(timeout, self, {tname, cb})
+    trefnew = Timer.start_timer(timeout, self(), {tname, cb})
 
     {:reply, :ok, %Etimer{
       running: [{tname, trefnew}] ++ timers

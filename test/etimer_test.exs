@@ -49,7 +49,7 @@ defmodule EtimerTest do
   test "start a new timer" do
     cb = {IO, :inspect, ["hello"]}
     {:reply, :ok, state} = {:start_timer, :my_timer, 42_000, cb}
-    |> Etimer.handle_call(self, %Etimer{})
+    |> Etimer.handle_call(self(), %Etimer{})
 
     assert Enum.count(state.running) == 1
     assert {:my_timer, t_ref} = Enum.at(state.running, 0)
@@ -59,14 +59,14 @@ defmodule EtimerTest do
   test "starting an existing timer restarts it" do
     cb = {IO, :inspect, ["hello"]}
     {:reply, :ok, state} = {:start_timer, :my_timer, 10_000, cb}
-    |> Etimer.handle_call(self, %Etimer{})
+    |> Etimer.handle_call(self(), %Etimer{})
 
     assert Enum.count(state.running) == 1
     assert {:my_timer, t_ref} = Enum.at(state.running, 0)
     assert is_reference(t_ref)
 
     {:reply, :ok, state} = {:start_timer, :my_timer, 10_000, cb}
-    |> Etimer.handle_call(self, state)
+    |> Etimer.handle_call(self(), state)
     assert Enum.count(state.running) == 1
     assert {:my_timer, t_ref2} = Enum.at(state.running, 0)
     assert is_reference(t_ref2)
@@ -75,17 +75,17 @@ defmodule EtimerTest do
 
   test "stop a not running timer" do
     assert {:reply, :not_running, _state} = {:stop_timer, :my_timer}
-    |> Etimer.handle_call(self, %Etimer{})
+    |> Etimer.handle_call(self(), %Etimer{})
   end
   
   test "stop a running timer" do
     cb = {IO, :inspect, ["hello"]}
     {:reply, :ok, state} = {:start_timer, :my_timer, 10_000, cb}
-    |> Etimer.handle_call(self, %Etimer{})
+    |> Etimer.handle_call(self(), %Etimer{})
     assert Enum.count(state.running) == 1
 
     {:reply, response, state} = {:stop_timer, :my_timer}
-    |> Etimer.handle_call(self, state)
+    |> Etimer.handle_call(self(), state)
     assert Enum.count(state.running) == 0
 
     assert {:ok, x} = response
@@ -93,7 +93,7 @@ defmodule EtimerTest do
   end
 
   test "callback is fired on timer event" do
-    cb = {Process, :send, [self, "hello", []]}
+    cb = {Process, :send, [self(), "hello", []]}
 
     state = %Etimer{running: [{:my_timer, :aref}]}
 
@@ -116,7 +116,7 @@ defmodule EtimerTest do
   end
 
   test "not current timer ref is ignored and removed" do
-    cb = {Process, :send, [self, "hello", []]}
+    cb = {Process, :send, [self(), "hello", []]}
 
     state = %Etimer{running: [{:my_timer, :oldref}]}
 
@@ -126,7 +126,7 @@ defmodule EtimerTest do
   end
 
   test "stop call" do
-    {:stop, :normal, :ok, _state} = Etimer.handle_call(:stop, self, %Etimer{})
+    {:stop, :normal, :ok, _state} = Etimer.handle_call(:stop, self(), %Etimer{})
   end
 
   test "any cast" do
@@ -135,9 +135,9 @@ defmodule EtimerTest do
   end
 
   test "on terminate all timers are stopped" do
-    t1 = Timer.start_timer(10_000, self, :msg)
-    t2 = Timer.start_timer(10_000, self, :msg)
-    t3 = Timer.start_timer(10_000, self, :msg)
+    t1 = Timer.start_timer(10_000, self(), :msg)
+    t2 = Timer.start_timer(10_000, self(), :msg)
+    t3 = Timer.start_timer(10_000, self(), :msg)
 
     state = %Etimer{running: [t1, t2, t3]}
     :ok = Etimer.terminate(:any, state)

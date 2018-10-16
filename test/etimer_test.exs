@@ -2,8 +2,8 @@ defmodule EtimerTest do
   use ExUnit.Case
   doctest Etimer
 
-  alias Etimer.Timer
   alias Etimer.Test.TimerHelper
+  alias Etimer.Timer
 
   #
   # API tests
@@ -20,7 +20,7 @@ defmodule EtimerTest do
     :ok = Etimer.stop(:my_timer)
 
     # this may need sometime on slow system, but well
-    TimerHelper.wait_until(fn() ->
+    TimerHelper.wait_until(fn ->
       refute Process.alive?(pid)
     end)
   end
@@ -39,7 +39,7 @@ defmodule EtimerTest do
     assert val > 0
   end
 
-  # 
+  #
   # GenServer callbacks tests
   #
   test "init test" do
@@ -48,8 +48,10 @@ defmodule EtimerTest do
 
   test "start a new timer" do
     cb = {IO, :inspect, ["hello"]}
-    {:reply, :ok, state} = {:start_timer, :my_timer, 42_000, cb}
-    |> Etimer.handle_call(self(), %Etimer{})
+
+    {:reply, :ok, state} =
+      {:start_timer, :my_timer, 42_000, cb}
+      |> Etimer.handle_call(self(), %Etimer{})
 
     assert Enum.count(state.running) == 1
     assert {:my_timer, t_ref} = Enum.at(state.running, 0)
@@ -58,15 +60,19 @@ defmodule EtimerTest do
 
   test "starting an existing timer restarts it" do
     cb = {IO, :inspect, ["hello"]}
-    {:reply, :ok, state} = {:start_timer, :my_timer, 10_000, cb}
-    |> Etimer.handle_call(self(), %Etimer{})
+
+    {:reply, :ok, state} =
+      {:start_timer, :my_timer, 10_000, cb}
+      |> Etimer.handle_call(self(), %Etimer{})
 
     assert Enum.count(state.running) == 1
     assert {:my_timer, t_ref} = Enum.at(state.running, 0)
     assert is_reference(t_ref)
 
-    {:reply, :ok, state} = {:start_timer, :my_timer, 10_000, cb}
-    |> Etimer.handle_call(self(), state)
+    {:reply, :ok, state} =
+      {:start_timer, :my_timer, 10_000, cb}
+      |> Etimer.handle_call(self(), state)
+
     assert Enum.count(state.running) == 1
     assert {:my_timer, t_ref2} = Enum.at(state.running, 0)
     assert is_reference(t_ref2)
@@ -74,19 +80,25 @@ defmodule EtimerTest do
   end
 
   test "stop a not running timer" do
-    assert {:reply, :not_running, _state} = {:stop_timer, :my_timer}
-    |> Etimer.handle_call(self(), %Etimer{})
+    assert {:reply, :not_running, _state} =
+             {:stop_timer, :my_timer}
+             |> Etimer.handle_call(self(), %Etimer{})
   end
-  
+
   test "stop a running timer" do
     cb = {IO, :inspect, ["hello"]}
-    {:reply, :ok, state} = {:start_timer, :my_timer, 10_000, cb}
-    |> Etimer.handle_call(self(), %Etimer{})
+
+    {:reply, :ok, state} =
+      {:start_timer, :my_timer, 10_000, cb}
+      |> Etimer.handle_call(self(), %Etimer{})
+
     assert Enum.count(state.running) == 1
 
-    {:reply, response, state} = {:stop_timer, :my_timer}
-    |> Etimer.handle_call(self(), state)
-    assert Enum.count(state.running) == 0
+    {:reply, response, state} =
+      {:stop_timer, :my_timer}
+      |> Etimer.handle_call(self(), state)
+
+    assert Enum.empty?(state.running)
 
     assert {:ok, x} = response
     assert is_integer(x)
@@ -97,9 +109,11 @@ defmodule EtimerTest do
 
     state = %Etimer{running: [{:my_timer, :aref}]}
 
-    {:noreply, state} = {:timeout, :aref, {:my_timer, cb}}
-    |> Etimer.handle_info(state)
-    assert Enum.count(state.running) == 0
+    {:noreply, state} =
+      {:timeout, :aref, {:my_timer, cb}}
+      |> Etimer.handle_info(state)
+
+    assert Enum.empty?(state.running)
 
     assert_receive "hello"
   end
@@ -109,8 +123,10 @@ defmodule EtimerTest do
 
     state = %Etimer{running: [{:a_timer, :aref}]}
 
-    {:noreply, new_state} = {:timeout, :bref, {:b_timer, cb}}
-    |> Etimer.handle_info(state)
+    {:noreply, new_state} =
+      {:timeout, :bref, {:b_timer, cb}}
+      |> Etimer.handle_info(state)
+
     assert Enum.count(state.running) == 1
     assert state == new_state
   end
@@ -120,9 +136,11 @@ defmodule EtimerTest do
 
     state = %Etimer{running: [{:my_timer, :oldref}]}
 
-    {:noreply, state} = {:timeout, :newref, {:my_timer, cb}}
-    |> Etimer.handle_info(state)
-    assert Enum.count(state.running) == 0
+    {:noreply, state} =
+      {:timeout, :newref, {:my_timer, cb}}
+      |> Etimer.handle_info(state)
+
+    assert Enum.empty?(state.running)
   end
 
   test "stop call" do
@@ -146,5 +164,4 @@ defmodule EtimerTest do
     assert false == :erlang.read_timer(t2)
     assert false == :erlang.read_timer(t3)
   end
-
 end

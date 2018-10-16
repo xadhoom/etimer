@@ -9,38 +9,38 @@ defmodule Etimer do
   Many concepts are cleary expressed into the original package,
   which can be referenced for more details.
 
-## Testing with Etimer (adapted from :chronos)
+  ## Testing with Etimer (adapted from :chronos)
 
-Provide a `timer_expiry` function as part of the API for the component
-you are creating, for example:
+  Provide a `timer_expiry` function as part of the API for the component
+  you are creating, for example:
 
       def timer_expiry(timer_name) do
         GenServer.call(__MODULE__, {:timer_expiry, timer_name})
       end
 
-In the code you can request a timer like this:
+  In the code you can request a timer like this:
 
       Etimer:start_timer(:my_server, :timer1, {MyMod, timer_expiry, [:timer1]})
 
-and then handling the timeout becomes very simple:
+  and then handling the timeout becomes very simple:
 
       def handle_call({timer_expiry, :timer1}, _from, state) do
         # your timed code here
         {:reply, :something, state}
       end
 
-That is the basic set-up and while testing you have to mock
-Etimer. For example, using `:meck`:
+  That is the basic set-up and while testing you have to mock
+  Etimer. For example, using `:meck`:
 
       :meck.new(Etimer)
       :meck.expect(Etimer, :start_timer, fn(_, _, _) -> 42 end)
 
-As part of the test you check that the timer was requsted to start:
+  As part of the test you check that the timer was requsted to start:
 
       assert :meck.called(Etimer, :start_timer, [:my_server, :timer1])
 
-And when you come to the point in the test where you want to see the
-effects of the timer expiry you simply have to call:
+  And when you come to the point in the test where you want to see the
+  effects of the timer expiry you simply have to call:
 
       MyMod.timer_expiry(:timer1)
 
@@ -57,7 +57,6 @@ effects of the timer expiry you simply have to call:
   Server name can be any `term()` which gets registered through `:gproc`.
 
   If the current process dies, all registered timers will be cancelled.
-
 
       Etimer.start_link(:my_server)
   """
@@ -122,46 +121,48 @@ effects of the timer expiry you simply have to call:
   @doc false
   def init(server_name) do
     :gproc
+
     server_name
     |> proc_name
-    |> :gproc.reg
+    |> :gproc.reg()
 
     {:ok, %Etimer{}}
   end
 
   @doc false
-  @spec handle_call({:start_timer, term, non_neg_integer, cb},
-    pid, %Etimer{running: list(tuple)}) ::
-    {:reply, :ok, %Etimer{running: list(tuple)}}
+  @spec handle_call({:start_timer, term, non_neg_integer, cb}, pid, %Etimer{running: list(tuple)}) ::
+          {:reply, :ok, %Etimer{running: list(tuple)}}
   def handle_call({:start_timer, tname, timeout, cb = {_m, _f, _a}}, _from, state) do
     # If the tname timer is running we clean it up.
     # Otherwise just start it.
 
-    timers = case List.keytake(state.running, tname, 0) do
-      nil ->
-        state.running
-      {{_k, tref}, newts} ->
-         Timer.cancel_timer(tref)
-        newts
-    end
+    timers =
+      case List.keytake(state.running, tname, 0) do
+        nil ->
+          state.running
+
+        {{_k, tref}, newts} ->
+          Timer.cancel_timer(tref)
+          newts
+      end
 
     trefnew = Timer.start_timer(timeout, self(), {tname, cb})
 
-    {:reply, :ok, %Etimer{
-      running: [{tname, trefnew}] ++ timers
-      }
-    }
+    {:reply, :ok,
+     %Etimer{
+       running: [{tname, trefnew}] ++ timers
+     }}
   end
 
   @doc false
-  @spec handle_call({:stop_timer, term},
-    pid, %Etimer{running: list(tuple)}) ::
-    {:reply, :not_running, %Etimer{running: list(tuple)}} |
-    {:reply, {:ok, non_neg_integer}, %Etimer{running: list(tuple)}}
+  @spec handle_call({:stop_timer, term}, pid, %Etimer{running: list(tuple)}) ::
+          {:reply, :not_running, %Etimer{running: list(tuple)}}
+          | {:reply, {:ok, non_neg_integer}, %Etimer{running: list(tuple)}}
   def handle_call({:stop_timer, tname}, _from, state) do
     case List.keytake(state.running, tname, 0) do
       nil ->
         {:reply, :not_running, state}
+
       {{_k, tref}, newts} ->
         time_left = Timer.cancel_timer(tref)
         {:reply, {:ok, time_left}, %Etimer{running: newts}}
@@ -179,23 +180,27 @@ effects of the timer expiry you simply have to call:
   end
 
   @doc false
-  @spec handle_info({:timeout, reference, {term, cb}},
-    %Etimer{running: list(tuple)}) ::
-    {:noreply, %Etimer{running: list(tuple)}}
+  @spec handle_info(
+          {:timeout, reference, {term, cb}},
+          %Etimer{running: list(tuple)}
+        ) :: {:noreply, %Etimer{running: list(tuple)}}
   def handle_info({:timeout, tref, {tname, {mod, fun, args}}}, state) do
+    timers =
+      case List.keytake(state.running, tname, 0) do
+        nil ->
+          state.running
 
-    timers = case List.keytake(state.running, tname, 0) do
-      nil ->
-        state.running
-      {{_k, ^tref}, newts} ->
-        spawn fn ->
-          apply(mod, fun, args)
-        end
-        newts
-      {{_k, _tref}, newts} ->
-        # ignored since tref is not the current one
-        newts
-    end
+        {{_k, ^tref}, newts} ->
+          spawn(fn ->
+            apply(mod, fun, args)
+          end)
+
+          newts
+
+        {{_k, _tref}, newts} ->
+          # ignored since tref is not the current one
+          newts
+      end
 
     {:noreply, %Etimer{running: timers}}
   end
@@ -204,9 +209,10 @@ effects of the timer expiry you simply have to call:
   def terminate(_reason, state) do
     # stop all timers
     state.running
-    |> Enum.each(fn(tref) ->
+    |> Enum.each(fn tref ->
       _ = Timer.cancel_timer(tref)
     end)
+
     :ok
   end
 
